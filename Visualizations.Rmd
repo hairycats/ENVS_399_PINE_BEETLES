@@ -1,0 +1,275 @@
+---
+title: "Pine Beetles"
+author: "Group 2"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=False}
+library(readr)
+Dataset1_100x100m <- read_csv("Desktop/School/EnviData/Pine Beetles/Dataset1_100x100m.csv")
+View(Dataset1_100x100m)
+
+Dataset2_500x500m <- read_csv("Desktop/School/EnviData/Pine Beetles/Dataset2_500x500m.csv")
+View(Dataset2_500x500m)
+
+historical_data <- read_csv("Desktop/School/EnviData/Pine Beetles/RDS-2020-0036/Data/mpb_reconstruction_data.csv")
+View(historical_data)
+```
+
+```{r}
+library(skimr)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(patchwork)
+library(terra)
+library(mgcv)
+```
+
+
+```{r}
+skim(Dataset1_100x100m)
+skim(Dataset2_500x500m)
+skim (historical_data)
+```
+
+```{r}
+ds2_500 <- Dataset2_500x500m %>% 
+  arrange(Year)
+
+View(ds2_500)
+```
+
+```{r}
+historical_data <- historical_data %>% 
+  arrange (death_date)
+
+View(historical_data)
+```
+
+```{r}
+ggplot(data = historical_data, aes(x = death_date, y = age, color = site, size = dbh_cm, alpha = 0.5)) + 
+  geom_point() +
+  geom_vline(xintercept = historical_data$event_date, linetype = "dashed", color = "black") + 
+  xlab("Death Year") + 
+  ylab("Age of Tree at death") + 
+  labs(title = "Tree Age and Size at Death During Mountain Pine Beetle Mortality Events", subtitle = "Point color represents site; size represents DBH; dashed line shows mortality event year"
+) +
+  scale_color_brewer(palette = "Paired") + 
+  guides(size = "none", alpha = "none") + 
+  theme_minimal()
+```
+Thee scatter plot above shows the relationship between the year trees died and their age at death across 11 different sites, with point color representing site and point size indicating tree diameter (DBH). A dashed vertical line marks the years when mortality events took place. 
+
+```{r}
+#Density plots
+p1 <- ggplot(Dataset1_100x100m) +
+  geom_raster(aes(Longitude, Latitude, fill = factor(MPB))) +
+  labs(title = "100m Cells: MPB Presence") + 
+  scale_fill_manual(values = c("grey", "red")) + 
+  theme_minimal()
+
+p2 <- ggplot(Dataset2_500x500m) +
+  geom_raster(aes(Longitude, Latitude, fill = MPB)) +
+  labs(title = "500m Cells: MPB Tree Count Density") + 
+  scale_fill_viridis_c() + 
+  theme_minimal()
+
+p3 <- ggplot(Dataset1_100x100m, aes(x = Longitude, y = Latitude)) +
+  stat_density_2d(aes(fill = after_stat(level)),
+                  geom = "polygon", alpha = 0.6) +
+  scale_fill_viridis_c() +
+  coord_equal() +
+  labs(title = "100m Cells: MPB Presence",
+       fill = "Density") +
+  theme_minimal()
+
+p4 <- ggplot(Dataset2_500x500m, aes(x = Longitude, y = Latitude, weight = MPB)) +
+  stat_density_2d(aes(fill = after_stat(level)),
+                  geom = "polygon", alpha = 0.6) +
+  scale_fill_viridis_c() +
+  coord_equal() +
+  labs(title = "500m Cells: MPB Tree Count Density",
+       fill = "Density") +
+  theme_minimal()
+
+p1 / p2
+p3 / p4
+
+```
+These maps visualize the spatial distribution of mountain pine beetle (MPB) infestations, the 100 m cells show infestation in a presence/absence manner (either the bugs are there or not) while the 500 m cells showing the number of infested trees. These density plots are also being overlaid onto a GIS map to be more useful for the final project. The main difference between these two plots is that one is smoothed and the other is not. 
+
+```{r}
+#plot 1: Shows winter surival threshold using the min winter temperature and the invested number of trees with MPB
+#plot 2: peak emergence vs degree days
+
+ggplot(Dataset1_100x100m, aes(Tmin_Winter, MPB)) +
+  labs(title = "Effect of Winter Minimum Temperature on Mountain Pine Beetle Presence") + 
+  ylab("Pine Beetles (Presence)") + 
+  xlab("Minimum Winter Temperature") + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) + 
+  theme_minimal()
+
+ggplot(Dataset1_100x100m, aes(DegreeDays, PeakEmergence)) +
+  labs(title = "Relationship Between Degree-Days and Peak Beetle Emergence") + 
+  ylab("Pine Beetle Peak Emergence")+ 
+  xlab("Accumlated Degrees over 5.5C (Degree-Days)") + 
+  geom_point(alpha = 0.3) +
+  geom_smooth() + 
+  theme_minimal()
+
+#degreedays defined as counting how many degrees above 5.5C each day was between the previous fall to the summer
+#peakemergence is in julian years
+
+#plots show that Warmer years = earlier emergence = more infestation
+```
+**Plot 1** shows the relationship between the lowest winter minimum temperature (TMin_Winter) and the presence of mountain pine beetle infestations (MPB). A logistic regression curve estimates how winter temperature influences the probability of beetle presence. 
+
+**Plot 2** illustrates the relationship between accumulated degree-days above 5.5°C and the timing of peak mountain pine beetle emergence (Julian day). The smoothing line shows how increasing heat accumulation influences the timing of when beetles emerge during the season.
+
+```{r}
+#older trees are more suspetiable 
+
+ggplot(Dataset1_100x100m, aes(PineAge, MPB)) +
+  labs(title = "Effect of Pine Age on Mountain Pine Beetle Presence") + 
+  ylab("Pine Beetles (presence)") + 
+  xlab ("Pine Age (Years)") + 
+  geom_smooth(method="glm", method.args=list(family="binomial")) +
+    theme_minimal()
+```
+
+
+```{r}
+
+# Lower elevations = warmer = higher MPB survival
+ggplot(Dataset1_100x100m, aes(Elevation, MPB)) +
+  labs(title = "Effect of Elevation on the Presence of Mountain") + 
+  ylab("Pine Beetles (Presence)") + 
+  xlab("Elevation (m)") + 
+  geom_smooth(method="glm", method.args=list(family="binomial")) + 
+  theme_minimal()
+
+model_north <- glm(MPB ~ Northerness,
+                   data = Dataset1_100x100m,
+                   family = binomial)
+
+# higher probability of infestation on northwest slopes 
+ggplot(Dataset1_100x100m, aes(Northerness, Easterness, z = MPB)) +
+  stat_summary_2d(fun = mean) +
+  scale_fill_viridis_c(name = "Infestation\nProbability") +
+  labs(title = "MPB Probability Across Aspect Space") +
+  
+  theme_minimal()
+```
+**Plot 1** This plot shows how elevation influences the probability of mountain pine beetle (MPB) presence. The logistic regression curve shows that pine beetle probability goes up with elevation which is curious and something to look into further, as it is not supported by other evidence. 
+
+**Plot 2** This plot visualizes the average probability of MPB infestation across northerness and easterness. The color gradient highlights areas of higher infestation likelihood, indicating that northwest-facing slopes may experience greater beetle activity, potentially due to favorable microclimate conditions. 
+
+```{r}
+spread_long <- Dataset1_100x100m %>%
+  select(MPB, BP1, BP2, BP3) %>%
+  tidyr::pivot_longer(cols = BP1:BP3,
+                      names_to = "Radius",
+                      values_to = "InfestedNeighbors")
+
+ggplot(spread_long, aes(InfestedNeighbors, MPB)) +
+  labs(title = "Influence of Nearby Infestations on Mountain Pine Beetle Spread") + 
+  ylab ("Pine Beetle (Presence)") + 
+  xlab("Infested Neighbors")
+  stat_smooth(method="glm", method.args=list(family="binomial")) +
+  facet_wrap(~Radius) +
+  theme_minimal()
+```
+This faceted plot shows how the number of previously infested neighboring cells at different spatial radii (BP1, BP2, BP3) relates to the probability of mountain pine beetle (MPB) presence. Logistic regression curves illustrate how infestation likelihood increases as the number of nearby infested areas grows. 
+
+```{r}
+spread_data <- Dataset1_100x100m %>%
+  select(MPB,
+         BP1, BP1man, BP1red,
+         BP2, BP2man, BP2red,
+         BP3, BP3man, BP3red) %>%
+  pivot_longer(cols = -MPB,
+               names_to = "Variable",
+               values_to = "Value") %>%
+  mutate(
+    Radius = case_when(
+      grepl("BP1", Variable) ~ "Radius 1",
+      grepl("BP2", Variable) ~ "Radius 2",
+      grepl("BP3", Variable) ~ "Radius 3"
+    ),
+    Type = case_when(
+      grepl("man", Variable) ~ "Controlled",
+      grepl("red", Variable) ~ "Uncontrolled",
+      TRUE ~ "Total"
+    )
+  )
+
+ggplot(spread_data,
+       aes(x = Value,
+           y = MPB,
+           color = Type)) +
+  stat_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              se = FALSE) +
+  facet_wrap(~Radius, scales = "free_x") +
+  scale_color_manual(values = c(
+    "Total" = "black",
+    "Controlled" = "blue",
+    "Uncontrolled" = "red"
+  )) +
+  labs(title = "Effect of Neighboring Infestation Pressure",
+       x = "Number of Infested Neighbors (Previous Year)",
+       y = "Probability of Current Infestation",
+       color = "Infestation Type") +
+  theme_minimal()
+
+model_results <- spread_data %>%
+  group_by(Radius, Type) %>%
+  nest() %>%
+  mutate(
+    model = map(data, ~ glm(MPB ~ Value, data = .x, del, ~ coef(.x)[2]))
+  ) 
+
+ggplot(model_results,
+       aes(x = Radius,
+           y = slope,
+           color = Type,
+           group = Type)) +
+  geom_point(size = 3) +
+  geom_line() +
+  labs(title = "Decay of Neighbor Influence with Distance",
+       y = "Log-Odds Effect on Infestation") +
+  theme_minimal()
+```
+Total = All infested neighbors 
+Controlled = Neighbors where pine beetle infestations were treated and managed 
+Uncontrolled = Neighbors where pine beetle infestations were left untreated/unmanaged
+
+**Plot 1** This faceted plot shows how the number of infested neighboring cells from the previous year influences the probability of current mountain pine beetle (MPB) infestation across three spatial radii (1-3 cells away from meassured cell).
+
+**Plot 2** This plot summarizes the strength of the relationship between neighboring infestations and current MPB presence by showing the log-odds slope of infestation probability for each radius and infestation type. It shows how the influence of nearby infestations changes with distance and differs between controlled and uncontrolled outbreaks. 
+
+```{r}
+p_map  <- p1
+p_temp <- ggplot(Dataset1_100x100m, aes(Tmin_Winter, MPB)) +
+  stat_smooth(method="glm",
+              method.args=list(family="binomial"))
+
+p_age  <- ggplot(Dataset1_100x100m, aes(PineAge, MPB)) +
+  stat_smooth(method="glm",
+              method.args=list(family="binomial"))
+
+p_spread <- ggplot(Dataset1_100x100m, aes(BP1, MPB)) +
+  stat_smooth(method="glm",
+              method.args=list(family="binomial"))
+
+(p_map | p_temp) /
+(p_age | p_spread)
+```
+
+
+
