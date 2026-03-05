@@ -1,0 +1,57 @@
+---
+title: "Spatial_dataset_filtering"
+output: pdf_document
+date: "2026-03-03"
+---
+
+#Loading it in yurr
+```{r}
+spatial = read.csv('~/DATA399/Data/SEMESTER_PROJECT/spatial_data_as_table_TableToExcel.csv')
+```
+#Load me packages
+```{r}
+library('tidyverse')
+```
+
+
+#Renaming every single fucking column
+```{r}
+#colnames(spatial)
+spatial = spatial %>%
+  rename(watershedID = HUC12,
+         watershedAcres = HUC_Acres,
+         pinesN = ba1,
+         pinesA = ba2,
+         pinesB = ba3,
+         basalN = ba80_1,
+         basalA = ba80_2,
+         basalB = ba80_3,
+         acresN = lpp1,
+         acresA = lpp2,
+         acresB = lpp3,
+         probabilityN = pdom1,
+         probabilityA = pdom2,
+         probabilityB = pdom3,
+         likelyN = pro50_1,
+         likelyA = pro50_2,
+         likelyB = pro50_3,
+         meanDiaN = qmd1,
+         meanDiaA = qmd2,
+         meanDiaB = qmd3,
+         bigDiaN = qmd8_1,
+         bigDiaA = qmd8_2,
+         bigDiaB = qmd8_3,
+         sdiN = sdi1,
+         sdiA = sdi2,
+         sdiB = sdi3,
+         meantpaN = tpa1,
+         meantpaA = tpa2,
+         meantaB = tpa3,)
+#colnames(spatial)
+
+write.csv(spatial,'/Users/ochin/OneDrive/Documents/DATA399/Data/SEMESTER_PROJECT/spatial_data_as_table_TableToExcel2.csv')
+```
+
+
+
+
