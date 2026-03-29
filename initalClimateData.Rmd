@@ -1,0 +1,106 @@
+---
+title: "gooningToBeetles"
+output: pdf_document
+date: "2026-03-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#I LOVE TIDYVERSE
+```{r}
+library(tidyverse)
+```
+
+#dumbass beetles
+```{r}
+beets = read_csv('~/DATA399/SemesterGroupProject/rooseveltBeetles.csv')
+```
+
+#Just need ponderosas
+```{r}
+beets = beets %>%
+  filter(HOST == 'ponderosa pine')
+```
+#What's going up there in that noggin of yours??
+```{r}
+colSums(is.na(beets))
+nrow(beets)
+```
+
+#no dawg these rows shit (too many nas can't be bothered to deal with)
+```{r}
+beets =  subset(beets, select = -c(HOST_GROUP_CODE, PERCENT_AFFECTED_CODE, PERCENT_MIN,
+                   PERCENT_MAX, PERCENT_MID, SNAPGRID_ROW, SNAPGRID_COLUMN))
+```
+
+#Mmkay how we lookin now??
+```{r}
+is(beets$)
+```
+
+
+
+#uhh let's see here trying to steal the internet code to import climate data mmmmm climate data
+
+#No don't runn it againnn (jk just run it once but it kinda slow)
+```{}
+install.packages("prism")
+library(prism)
+
+#Thingy going in here
+prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data")
+
+# Download annual precip and temp for your year range (1997-2024)
+get_prism_annual(type = "ppt", years = 1997:2024, keepZip = FALSE)
+get_prism_annual(type = "tmean", years = 1997:2024, keepZip = FALSE)
+```
+
+#I really don't know what this does..
+```{}
+#install.packages('sf')
+#install.packages('terra')
+library(prism)
+library(terra)
+
+prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data")
+
+get_prism_annual(type = "ppt", years = 1997:2024, keepZip = FALSE)
+
+# Replace pd_stack with this:
+prism_files <- prism_archive_subset("ppt", "annual", years = 1997:2024,
+                                    resolution = '4k')
+prism_paths <- pd_to_file(prism_files)  # gets the actual .bil file paths
+
+# Stack with terra directly
+prism_stack <- rast(prism_paths)
+
+# Then extract as before
+climate_vals <- terra::extract(prism_stack, beets, fun = mean)
+```
+
+```{}
+library(sf)
+library(dplyr)
+
+gpkg_files <- list.files("~/DATA399/SemesterGroupProject/idk some output", pattern = "\\.gpkg$", full.names = TRUE)
+
+# Read all files
+layers <- lapply(gpkg_files, st_read)
+
+# Drop geometry from all but the first, then join by a shared ID
+combined <- layers[[1]]
+
+for (i in 2:length(layers)) {
+  # drop geometry before joining
+  new_cols <- st_drop_geometry(layers[[i]])
+  # only keep the ID column + the new climate columns
+  new_cols <- select(new_cols, OBJECTID, contains("mean"))
+  combined <- left_join(combined, new_cols, by = "OBJECTID")
+}
+
+st_write(combined, "beetles_with_climate_wide.gpkg")
+```
+
+
