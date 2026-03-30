@@ -1,0 +1,328 @@
+---
+title: "SSRD FEM Data"
+output: html_document
+date: "2026-03-24"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(lubridate)
+library(mgcv)   # later for GAMs
+library(lme4)   # later for mixed models
+```
+
+```{r message=FALSE}
+library(readr)
+FEM_Data <- read_csv("FEM Data.csv")
+View(FEM_Data)
+```
+
+```{r}
+
+PondoMPB_Data <- FEM_Data %>% 
+  filter(HOST == "ponderosa pine", DCA_COMMON_NAME == "mountain pine beetle", DAMAGE_TYPE == "Mortality") %>% 
+  mutate(
+    SURVEY_YEAR = as.numeric(SURVEY_YEAR),
+    ACRES = as.numeric(ACRES),
+    PERCENT_MID = as.numeric(PERCENT_MID)
+  ) %>% 
+  select(-CREATED_DATE, -MODIFIED_DATE,
+    -FEATURE_USER_ID, -OBSERVATION_USER_ID,
+    -NOTES, -COLLECTION_MODE,
+    -SNAPGRID_ROW, -SNAPGRID_COLUMN, -HOST_GROUP, -HOST_GROUP_CODE, -PERCENT_AFFECTED_CODE, -LABEL, -matches("^X_clim_.*(min|max|count|sum)$"))
+View(PondoMPB_Data)
+
+```
+
+```{r}
+total_affected <- PondoMPB_Data %>%
+  group_by(SURVEY_YEAR) %>%
+  summarise(total_acres = sum(ACRES, na.rm = TRUE)) %>%
+  ggplot(aes(x = SURVEY_YEAR, y = total_acres)) +
+  geom_line(color = "darkred", linewidth = 1) +
+  geom_point() +
+  labs(title = "Total Affected Area Over Time",
+       x = "Year", y = "Total Acres") +
+  theme_minimal()
+
+total_affected
+```
+
+**Summary**
+
+\- shows how the total area of forest affected by mortality changes over
+time
+
+\- each point represents the summed acres impacted in a given survey
+year
+
+\- line highlights trends in outbreak dynamics
+
+\- huge spike and then it flat lines (which may be due to lack of data)
+
+```{r}
+mortality <- PondoMPB_Data %>%
+  group_by(SURVEY_YEAR) %>%
+  summarise(mean_mortality = mean(PERCENT_MID, na.rm = TRUE)) %>%
+  ggplot(aes(SURVEY_YEAR, mean_mortality)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Mean Mortality Severity Over Time",
+       y = "Percent Mortality") +
+  theme_minimal()
+mortality
+
+mortality <- PondoMPB_Data %>%
+  filter(SURVEY_YEAR >= 2010 & SURVEY_YEAR <= 2025) %>%
+  group_by(SURVEY_YEAR) %>%
+  summarise(mean_mortality = mean(PERCENT_MID, na.rm = TRUE)) %>%
+  ggplot(aes(x = SURVEY_YEAR, y = mean_mortality)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Mean Mortality Severity (2010-2025)",
+       y = "Percent Mortality") +
+  theme_minimal()
+
+mortality
+```
+
+**Summary**
+
+\- average mortality severity of ponderosa pines from 2010 to 2025
+
+\- highlights year-to-year trends, whether the outbreak was
+intensifying, stabilizing, or declining during that period
+
+\- shape looks decent
+
+```{r}
+ggplot(PondoMPB_Data, aes(x = ACRES)) +
+  geom_histogram(bins = 40, fill = "forestgreen") +
+  scale_x_log10() +
+  labs(title = "Distribution of Affected Area (log scale)") +
+  theme_minimal()
+```
+
+**Summary** - distribution of individual affected areas across all
+observations - log scale to account for the wide range of sizes -
+reveals that most mortality events impact relatively small areas
+
+```{r}
+ggplot(PondoMPB_Data, aes(x = PERCENT_MID)) +
+  geom_histogram(bins = 30, fill = "orange") +
+  labs(title = "Distribution of Mortality Severity") +
+  theme_minimal()
+
+# Percent Mid = Affected range mid point
+```
+
+**Summary**
+
+\- shows how mortality severity (PERCENT_MID) is distributed
+
+\- indicates that most observations have low to moderate mortality
+
+\- high-severity events are less common
+
+```{r}
+ggplot(PondoMPB_Data %>% filter(!is.na(PERCENT_MID)), 
+       aes(x = factor(SURVEY_YEAR), y = PERCENT_MID)) +
+  geom_boxplot() +
+  labs(title = "Mortality by Year",
+       x = "Year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+**summary**
+
+\- something feels wrong here but we still have the right trend
+
+\- distribution of mortality severity each year
+
+```{r}
+ggplot(PondoMPB_Data, aes(x = ACRES, y = PERCENT_MID)) +
+  scale_x_log10() +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Area vs Mortality Severity") +
+  theme_minimal()
+```
+
+**Summary**
+
+\- relationship between the size of affected areas (log-scaled) and
+mortality severity
+
+\- red curve = in general, larger affected areas tend to be associated
+with slightly higher mortality
+
+\- relationship is nonlinear and variable
+
+```{r}
+climate_vars <- names(PondoMPB_Data) %>%
+  stringr::str_subset("^X_clim_.*mean$")
+
+correlations <- sapply(PondoMPB_Data[climate_vars], function(x) {
+  cor(x, PondoMPB_Data$PERCENT_MID, use = "complete.obs")
+})
+
+sort(correlations, decreasing = TRUE)
+
+top_vars <- names(sort(abs(correlations), decreasing = TRUE))[1:6]
+
+df_top <- PondoMPB_Data %>%
+  pivot_longer(
+    cols = all_of(top_vars),
+    names_to = "climate_var",
+    values_to = "climate_value"
+  )
+
+ggplot(df_top, aes(x = climate_value, y = PERCENT_MID)) +
+  geom_smooth(method = "gam", formula = y ~ s(x), color = "blue") +
+  facet_wrap(~ climate_var, scales = "free_x", ncol = 2) +
+  theme_minimal() +
+  labs(
+    title = "Top Climate Drivers of Mortality",
+    x = "Climate Variable",
+    y = "Percent Mortality"
+  )
+
+```
+
+**Summary**
+
+\- six climate variables most strongly correlated with mortality
+
+\- I hate these climate variables and have no idea what they mean
+
+\- each panel represents one of the 6
+
+\- GAM smoothed
+
+\- mortality responds differently across the range of each climate
+driver
+
+```{r}
+climate_vars <- PondoMPB_Data %>%
+  select(starts_with("X_clim")) %>%
+  select(where(is.numeric))
+
+cor_mat <- cor(climate_vars, use = "complete.obs")
+
+library(reshape2)
+cor_df <- melt(cor_mat)
+
+ggplot(cor_df, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Climate Variable Correlation Matrix")
+
+```
+
+**Summary**
+
+\- pairwise correlations among all mean numeric climate variables
+
+\- colors = strength and direction
+
+\- I know the axis suck I can make them better if I have better names
+for the climate variables
+
+```{r}
+severity_overtime <- PondoMPB_Data %>%
+  count(SURVEY_YEAR, PERCENT_AFFECTED) %>%
+  ggplot(aes(x = SURVEY_YEAR, y = n, fill = PERCENT_AFFECTED)) +
+  geom_area() +
+  labs(title = "Severity Classes Over Time",
+       y = "Count") +
+  theme_minimal()
+severity_overtime
+
+severity_overtime_zoom <- PondoMPB_Data %>%
+  filter(!is.na(PERCENT_AFFECTED),
+         PERCENT_AFFECTED != "") %>%
+  count(SURVEY_YEAR, PERCENT_AFFECTED) %>%
+  ggplot(aes(x = SURVEY_YEAR, y = n, fill = PERCENT_AFFECTED)) +
+  geom_area() +
+  labs(title = "Severity Classes Over Time",
+       y = "Count") +
+  theme_minimal()
+severity_overtime_zoom
+
+
+
+```
+
+**Summary:**
+
+\- how number of observations in each mortality severity class changes
+over time
+
+-   I zoomed in on just the part we have the right data for to make it
+    readable and look prettier
+
+\- I think with the rest of our data these trends make sense
+
+# Modeling
+
+```{r}
+lm_data <- PondoMPB_Data %>%
+  select(PERCENT_MID, all_of(top_vars)) %>%
+  filter(!is.na(PERCENT_MID)) %>%
+  drop_na()
+
+lm_model <- lm(PERCENT_MID ~ ., data = lm_data)
+summary(lm_model)
+```
+
+```{r}
+
+lm_data$predicted <- predict(lm_model, newdata = lm_data)
+
+ggplot(lm_data, aes(x = predicted, y = PERCENT_MID)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Linear Model: Observed vs Predicted Mortality",
+       x = "Predicted Percent Mortality",
+       y = "Observed Percent Mortality") +
+  theme_minimal()
+
+ggplot(lm_data, aes(x = predicted, y = PERCENT_MID)) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Linear Model: Observed vs Predicted Mortality",
+       x = "Predicted Percent Mortality",
+       y = "Observed Percent Mortality") +
+  theme_minimal()
+
+lm_long <- lm_data %>%
+  pivot_longer(cols = all_of(top_vars), names_to = "predictor", values_to = "value")
+
+ggplot(lm_long, aes(x = value, y = PERCENT_MID)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", color = "red") +
+  facet_wrap(~ predictor, scales = "free_x") +
+  labs(title = "Partial Effects of Climate Predictors on Mortality",
+       x = "Predictor Value", y = "Percent Mortality") +
+  theme_minimal()
+```
+
+```{r}
+gam_model <- gam(PERCENT_MID ~ s(X_clim_dat23mean) + s(X_clim_dat97mean) +
+                   s(X_clim_dat16mean) + s(X_clim_dat20mean) +
+                   s(X_clim_dat99mean) + s(X_clim_dat14mean),
+                 data = PondoMPB_Data,
+                 method = "REML",
+                 na.action = na.omit)
+
+summary(gam_model)
+
+par(mfrow = c(2, 3), mar = c(5, 5, 3, 2))
+plot(gam_model, rug = TRUE, shade = TRUE, pages = 1)
+```
