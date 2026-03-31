@@ -1,5 +1,5 @@
 ---
-title: "gooningToBeetles"
+title: "ToBeetles"
 output: pdf_document
 date: "2026-03-22"
 ---
@@ -27,6 +27,8 @@ beets = beets %>%
 ```{r}
 colSums(is.na(beets))
 nrow(beets)
+
+sort(unique(beets$SURVEY_YEAR))
 ```
 
 #no dawg these rows shit (too many nas can't be bothered to deal with)
@@ -41,66 +43,101 @@ is(beets$)
 ```
 
 
-
-#uhh let's see here trying to steal the internet code to import climate data mmmmm climate data
-
-#No don't runn it againnn (jk just run it once but it kinda slow)
-```{}
-install.packages("prism")
+#downloads all the prism data, and I mean allllll of the prism data
+```{r}
+#install.packages("prism")
 library(prism)
 
 #Thingy going in here
-prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data")
+prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data2")
 
-# Download annual precip and temp for your year range (1997-2024)
+#We're downloading total precipitation
 get_prism_annual(type = "ppt", years = 1997:2024, keepZip = FALSE)
+#mean temperature
 get_prism_annual(type = "tmean", years = 1997:2024, keepZip = FALSE)
+#max temperature
+get_prism_annual(type = "tmax", years = 1997:2024, keepZip = FALSE)
+#min temperature
+get_prism_annual(type = "tmin", years = 1997:2024, keepZip = FALSE)
+#min vapor pressure deficit
+get_prism_annual(type = "vpdmin", years = 1997:2024, keepZip = FALSE)
+#max vapor pressure deficit
+get_prism_annual(type = "vpdmax", years = 1997:2024, keepZip = FALSE)
+#mean dew point temperature
+get_prism_annual(type = "tdmean", years = 1997:2024, keepZip = FALSE)
 ```
+
+#uhh let's see here trying to steal the internet code to import climate data mmmmm climate data
 
 #I really don't know what this does..
-```{}
-#install.packages('sf')
-#install.packages('terra')
-library(prism)
-library(terra)
 
-prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data")
 
-get_prism_annual(type = "ppt", years = 1997:2024, keepZip = FALSE)
-
-# Replace pd_stack with this:
-prism_files <- prism_archive_subset("ppt", "annual", years = 1997:2024,
-                                    resolution = '4k')
-prism_paths <- pd_to_file(prism_files)  # gets the actual .bil file paths
-
-# Stack with terra directly
-prism_stack <- rast(prism_paths)
-
-# Then extract as before
-climate_vals <- terra::extract(prism_stack, beets, fun = mean)
-```
-
-```{}
+```{r}
 library(sf)
+library(terra)
 library(dplyr)
 
-gpkg_files <- list.files("~/DATA399/SemesterGroupProject/idk some output", pattern = "\\.gpkg$", full.names = TRUE)
+# Load and fix CRS
+beetles <- st_read("~/DATA399/SemesterGroupProject/damage_areas_new_crs.shp")
+# CRS is correctly EPSG:5070 now, just reproject to PRISM's CRS
+beetles_proj <- st_transform(beetles, crs = "EPSG:4269")
 
-# Read all files
-layers <- lapply(gpkg_files, st_read)
+# KEY FIX: extract using centroids, not polygon boundaries
+# 99.6% of polygons are smaller than one PRISM 4km cell,
+# so polygon extraction almost always returns NA
+beetles_centroids <- st_centroid(beetles_proj)
 
-# Drop geometry from all but the first, then join by a shared ID
-combined <- layers[[1]]
+variables <- c("tmean", "tmax", "tmin", "tdmean", "ppt", "vpdmin", "vpdmax")
+prism_dir <- "C:/Users/ochin/OneDrive/Documents/DATA399/SemesterGroupProject/prism_data2"
 
-for (i in 2:length(layers)) {
-  # drop geometry before joining
-  new_cols <- st_drop_geometry(layers[[i]])
-  # only keep the ID column + the new climate columns
-  new_cols <- select(new_cols, OBJECTID, contains("mean"))
-  combined <- left_join(combined, new_cols, by = "OBJECTID")
+get_bil_path <- function(var, year, dir) {
+  pattern <- paste0("prism_", var, "_us_25m_", year)
+  folder  <- list.files(dir, pattern = pattern, full.names = TRUE)
+  if (length(folder) == 0) return(character(0))
+  bil <- list.files(folder, pattern = "\\.bil$", full.names = TRUE)
+  return(bil)
 }
 
-st_write(combined, "beetles_with_climate_wide.gpkg")
+results <- st_drop_geometry(beetles_proj)
+for (var in variables) {
+  results[[var]] <- NA_real_
+}
+
+for (year in sort(unique(beetles_proj$SURVEY_YEA))) {
+  row_idx          <- which(beetles_proj$SURVEY_YEA == year)
+  centroids_year   <- beetles_centroids[row_idx, ]
+
+  for (var in variables) {
+    bil_path <- get_bil_path(var, year, prism_dir)
+
+    if (length(bil_path) == 0) {
+      message(paste("Missing raster:", var, year))
+      next
+    }
+
+    r         <- rast(bil_path)
+    extracted <- terra::extract(r, vect(centroids_year), method = "simple", bind = FALSE)
+    results[[var]][row_idx] <- extracted[[2]]
+  }
+
+  message(paste("Done: year", year))
+}
+
+beetles_climate <- st_sf(results, geometry = st_geometry(beetles_proj))
+
+if ("fid" %in% names(beetles_climate)) {
+  beetles_climate <- beetles_climate %>% rename(orig_fid = fid)
+}
+
+st_write(
+  beetles_climate,
+  "C:/Users/ochin/Downloads/School/beetles_with_climate.gpkg",
+  delete_dsn = TRUE
+)
 ```
+
+
+
+
 
 
