@@ -1,9 +1,11 @@
 ---
 title: "SSRD FEM Data"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2026-03-24"
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -12,14 +14,14 @@ library(tidyverse)
 library(dplyr)
 library(sf)
 library(lubridate)
-library(mgcv)   # later for GAMs
-library(lme4)   # later for mixed models
+library(mgcv) 
+library(lme4)  
+library(reshape2)
 ```
 
 ```{r message=FALSE}
 library(readr)
 FEM_Data <- read_csv("FEM Data.csv")
-View(FEM_Data)
 ```
 
 ```{r}
@@ -35,7 +37,6 @@ PondoMPB_Data <- FEM_Data %>%
     -FEATURE_USER_ID, -OBSERVATION_USER_ID,
     -NOTES, -COLLECTION_MODE,
     -SNAPGRID_ROW, -SNAPGRID_COLUMN, -HOST_GROUP, -HOST_GROUP_CODE, -PERCENT_AFFECTED_CODE, -LABEL, -matches("^X_clim_.*(min|max|count|sum)$"))
-View(PondoMPB_Data)
 
 ```
 
@@ -214,7 +215,7 @@ climate_vars <- PondoMPB_Data %>%
 
 cor_mat <- cor(climate_vars, use = "complete.obs")
 
-library(reshape2)
+
 cor_df <- melt(cor_mat)
 
 ggplot(cor_df, aes(Var1, Var2, fill = value)) +

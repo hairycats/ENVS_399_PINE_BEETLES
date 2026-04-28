@@ -1,0 +1,410 @@
+---
+title: "Climate Figures"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-04-01"
+---
+
+# Libraries Data Cleaning and Setup 
+
+```{r message=FALSE}
+
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(lubridate)
+library(mgcv) 
+library(lme4)
+library(reshape2)
+library(readr)
+
+
+```
+
+```{r}
+
+climate <- read_csv("beetles_with_climate.csv")
+head(climate)
+
+```
+
+```{r}
+
+climate_clean <- climate %>%
+  mutate(
+    SURVEY_YEAR = as.numeric(SURVEY_YEA),
+    ACRES = as.numeric(ACRES),
+    PERCENT_MID = as.numeric(PERCENT_MI)
+  ) %>% 
+  select(-CREATED_DA, -MODIFIED_D,
+         -FEATURE_US, -OBSERVATIO, 
+         -NOTES, -COLLECTION, 
+         -SNAPGRID_R, -SNAPGRID_C, 
+         -HOST_GROUP, -HOST_CODE, 
+         -LABEL, -DAMAGE_ARE, 
+         -HOST_GRO_1, -DCA_CODE, 
+         -OBSERVAT_1, -AREA_TYPE, 
+         -STATUS, -GRP, -OBSERVAT_2, 
+         -DATA_SOURC, -IDS_DATA_S, 
+         -SHAPE_Leng, -SHAPE_Area, 
+         -LEGACY_PAT, -LEGACY_P_1, 
+         -LEGACY_TPA, -LEGACY_NO_, 
+         -LEGACY_FOR, -LEGACY_F_1) %>% 
+  filter(DCA_COMMON == "mountain pine beetle", HOST == "ponderosa pine", DAMAGE_T_1 == "Mortality")
+head(climate_clean)
+```
+
+# Non-Climate Plots
+
+```{r}
+
+total_affected <- climate_clean %>%
+  group_by(SURVEY_YEA) %>%
+  summarise(total_acres = sum(ACRES, na.rm = TRUE)) %>%
+  ggplot(aes(x = SURVEY_YEA, y = total_acres)) +
+  geom_line(color = "darkred", linewidth = 1) +
+  geom_point() +
+  labs(title = "Total Affected Area Over Time",
+       x = "Year", y = "Total Acres") +
+  theme_minimal()
+
+total_affected
+```
+
+**Summary**
+
+\- shows how the total area of forest affected by mortality changes over time
+
+\- each point represents the summed acres impacted in a given survey year
+
+\- line highlights trends in outbreak dynamics
+
+\- huge spike and then it flat lines (which may be due to lack of data)
+
+```{r}
+
+mortality <- climate_clean %>%
+  group_by(SURVEY_YEA) %>%
+  summarise(mean_mortality = mean(PERCENT_MI, na.rm = TRUE)) %>%
+  ggplot(aes(SURVEY_YEA, mean_mortality)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Mean Mortality Severity Over Time",
+       y = "Percent Mortality", x = "Survey Year") +
+  theme_minimal()
+mortality
+
+mortality_zoom <- climate_clean %>%
+  filter(SURVEY_YEA >= 2010 & SURVEY_YEA <= 2025) %>%
+  group_by(SURVEY_YEAR) %>%
+  summarise(mean_mortality = mean(PERCENT_MI, na.rm = TRUE)) %>%
+  ggplot(aes(x = SURVEY_YEAR, y = mean_mortality)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Mean Mortality Severity (2010-2025)",
+       y = "Percent Mortality", x = "Survey Year") +
+  theme_minimal()
+mortality_zoom
+```
+
+**Summary**
+
+\- average mortality severity of ponderosa pines from 2010 to 2025
+
+\- highlights year-to-year trends, whether the outbreak was intensifying, stabilizing, or declining during that period
+
+\- shape looks decent
+
+\- the second one is the same just zoomed in
+
+```{r}
+
+ggplot(climate_clean, aes(x = ACRES)) +
+  geom_histogram(bins = 40, fill = "forestgreen") +
+  scale_x_log10() +
+  labs(title = "Distribution of Affected Area (log scale)", x = "Acres") +
+  theme_minimal()
+```
+
+**Summary**
+
+\- distribution of individual affected areas across all observations
+
+\- log scale to account for the wide range of sizes
+
+\- reveals that most mortality events impact relatively small areas
+
+```{r}
+
+ggplot(climate_clean, aes(x = PERCENT_MI)) +
+  geom_histogram(bins = 30, fill = "orange") +
+  labs(title = "Distribution of Mortality Severity", x = "Percent Mortality") +
+  theme_minimal()
+
+# Percent Mid = Affected range mid point
+```
+
+**Summary**
+
+\- shows how mortality severity (PERCENT_MID) is distributed
+
+\- indicates that most observations have low to moderate mortality
+
+\- high-severity events are less common
+
+```{r}
+
+ggplot(climate_clean %>% filter(!is.na(PERCENT_MI)), 
+       aes(x = factor(SURVEY_YEA), y = PERCENT_MI)) +
+  geom_boxplot() +
+  labs(title = "Mortality by Year",
+       x = "Year", y = "Percent Mortality") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+**summary**
+
+\- something feels wrong here but we still have the right trend
+
+\- distribution of mortality severity each year
+
+```{r}
+ggplot(climate_clean, aes(x = ACRES, y = PERCENT_MI)) +
+  scale_x_log10() +
+  geom_smooth(method = "loess", color = "red") +
+  labs(title = "Area vs Mortality Severity", x = "Acres", y = "Percent Mortality") +
+  theme_minimal()
+```
+
+# Climate Based Plots
+
+```{r}
+ggplot(climate_clean, aes(x = tmean, y = log(ACRES))) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(
+    title = "Mean Annual Temperature vs. Pine Beetle Mortality",
+    x = "Mean Annual Temperature (°C)",
+    y = "Log of Mortality Area (Acres)"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmin, y = log(ACRES))) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(
+    title = "Minimum Temperature (Winter Conditions) vs. Pine Beetle Mortality",
+    x = "Minimum Temperature (°C)",
+    y = "Log of Mortality Area (Acres)"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmax, y = log(ACRES))) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(
+    title = "Maximum Temperature vs. Pine Beetle Mortality",
+    x = "Maximum Temperature (°C)",
+    y = "Log of Mortality Area (Acres)"
+  ) + 
+  theme_minimal()
+```
+
+**Summary** \
+- mortality higher when temperature lower?? am I reading that right
+
+```{r}
+ggplot(climate_clean, aes(x = tmean, y = PERCENT_MI)) +
+  geom_smooth() + 
+  labs(
+    title = "Mean Annual Temperature vs. Percent of Area Affected",
+    x = "Mean Annual Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmin, y = PERCENT_MI)) +
+  geom_smooth() + 
+  labs(
+    title = "Minimum Temperature vs. Percent of Area Affected",
+    x = "Minimum Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmax, y = PERCENT_MI)) +
+  geom_smooth() + 
+  labs(
+    title = "Maximum Temperature vs. Percent of Area Affected",
+    x = "Maximum Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+```
+
+**Summary**
+
+-   I think these show what the first three were trying to show better
+
+-   starts low peaks and then flattens out
+
+-   I think the minimum temperature one is the most interesting
+
+```{r}
+
+ggplot(climate_clean, aes(x = ppt, y = PERCENT_MI)) +
+  geom_smooth(color = "blue") +
+  labs(
+    title = "Annual Precipitation vs. Percent of Area Affected by Pine Beetle Mortality",
+    x = "Annual Precipitation (mm)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+```
+
+**Summary**
+
+-   notable peak around 14mm
+
+-   dry conditions favor beetles
+
+-   This one is good
+
+```{r}
+
+ggplot(climate_clean, aes(x = vpdmax, y = PERCENT_MI)) +
+  geom_smooth(color = "blue") +
+  labs(
+    title = "Maximum Vapor Pressure Deficit vs. Percent of Area Affected",
+    x = "Maximum Vapor Pressure Deficit (hPa)",
+    y = "Percent of Area Affected "
+  )
+```
+
+**Summary:**
+
+-   peak \~14mm
+
+-   lots of room for error around the edges
+
+-   suggests that moderate atmospheric dryness may favor beetle activity?
+
+```{r}
+
+library(viridis)
+
+ggplot(climate_clean, aes(x = tmax, y = ppt)) +
+  geom_bin2d() +
+  scale_fill_viridis_c(option = "C", name = "Observation Count") +
+  labs(
+    title = "Relationship Between Maximum Temperature and Annual Precipitation",
+    x = "Maximum Temperature (°C)",
+    y = "Annual Precipitation (mm)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+**Summary :**
+
+-   There seems to be a temperature and percip sweet spot for beetle activity
+
+# Models
+
+```{r}
+climate_model <- climate_clean %>%
+  filter(!is.na(ACRES), !is.na(tmean), !is.na(ppt), !is.na(vpdmax)) %>%
+  mutate(
+    log_acres = log(ACRES),
+    SURVEY_YEAR = as.numeric(SURVEY_YEAR)
+  )
+```
+
+```{r}
+lm <- lm(
+  log(ACRES) ~ 
+    tmean + 
+    tmin + 
+    tmax + 
+    ppt + 
+    vpdmax,
+  data = climate_clean
+)
+
+summary(lm)
+plot(lm, pages = 4)
+
+climate_clean$pred_log_acres <- predict(lm, newdata = climate_clean)
+
+ggplot(climate_clean, aes(x = log(ACRES), y = pred_log_acres)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Observed vs. Predicted Pine Beetle Mortality Area",
+    x = "Observed Mortality Area (log acres)",
+    y = "Predicted Mortality Area (log acres)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+gam_model <- gam(
+  log_acres ~ 
+    s(tmean) +
+    s(ppt) +
+    s(vpdmax) +
+    s(tmin) +
+    s(SURVEY_YEAR),
+  data = climate_model,
+  method = "REML"
+)
+
+summary(gam_model)
+plot(gam_model, pages = 5)
+```
+
+```{r}
+library(gratia)
+
+gam_model2 <- gam(
+  log_acres ~ 
+    te(tmean, ppt) +  
+    s(vpdmax) +
+    s(SURVEY_YEAR),
+  data = climate_model,
+  method = "REML"
+)
+
+summary(gam_model2)
+
+draw(gam_model2, select = 1) + 
+  labs(
+    title = "Predicted Pine Beetle Mortality",
+    x = "Mean Annual Temperature (°C)",
+    y = "Annual Precipitation (mm)",
+    fill = "Predicted Mortality\n(log acres)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+```{r}
+gamm(
+  log_acres ~ te(tmean, ppt) + s(vpdmax) + s(SURVEY_YEAR),
+  random = list(REGION_ID = ~1),
+  data = climate_model
+)
+
+gamm_model <- gamm(
+  log_acres ~ 
+    s(tmean) +
+    s(ppt) +
+    s(vpdmax) +
+    s(tmin),
+  random = list(SURVEY_YEAR = ~1),
+  data = climate_model,
+  method = "REML"
+)
+
+par(mfrow = c(2, 2))  # bigger panels
+plot(gamm_model$gam,
+     cex = 1.2,
+     lwd = 2, pages = 4)
+```
