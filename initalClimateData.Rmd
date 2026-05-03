@@ -44,7 +44,7 @@ is(beets$)
 
 
 #downloads all the prism data, and I mean allllll of the prism data
-```{r}
+```{}
 #install.packages("prism")
 library(prism)
 
@@ -77,14 +77,17 @@ library(sf)
 library(terra)
 library(dplyr)
 
-# Load and fix CRS
-beetles <- st_read("~/DATA399/SemesterGroupProject/damage_areas_new_crs.shp")
+#set working directory and load data
+setwd("C:/Users/ochin/Downloads/School/GIS")
+beetles <- st_read("coloradoBeetles.shp")
+#beetles <- st_read("C:\Users\ochin\Downloads\School\GIS\coloradoBeetles.shp")
 # CRS is correctly EPSG:5070 now, just reproject to PRISM's CRS
 beetles_proj <- st_transform(beetles, crs = "EPSG:4269")
 
 # KEY FIX: extract using centroids, not polygon boundaries
 # 99.6% of polygons are smaller than one PRISM 4km cell,
 # so polygon extraction almost always returns NA
+sf_use_s2(FALSE)
 beetles_centroids <- st_centroid(beetles_proj)
 
 variables <- c("tmean", "tmax", "tmin", "tdmean", "ppt", "vpdmin", "vpdmax")
@@ -131,7 +134,7 @@ if ("fid" %in% names(beetles_climate)) {
 
 st_write(
   beetles_climate,
-  "C:/Users/ochin/Downloads/School/beetles_with_climate.gpkg",
+  "C:/Users/ochin/Downloads/School/colorado_beetles_with_climate.gpkg",
   delete_dsn = TRUE
 )
 ```
