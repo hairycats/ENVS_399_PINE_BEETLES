@@ -6,8 +6,25 @@ Mountain Pine Beetle outbreaks have been prevalent for more than 30 years in the
 Efforts to reduce beetle kill are shown to be both possible and effective, but a large-scale project will involve lots of resources and strict coordination in order to reduce the pine beetle population in the Rockies. We look to use historical data recording Mountain Pine Beetle outbreaks in order to better predict how they’ll spread in the coming years. We’ll also use data reflecting current beetle outbreaks to devise a strategy in order to greatly decrease the beetle population.
 
 ## Datasets
-1. **FEM DATA** 
+1. **National Insect and Disease Detection Survey**
+    - The dataset titled "National Insect and Disease Detection Survey" is an ongoing survey published and maintained by the United States Forest Service (USFS). As of 2008 when the Cooperative Forestry Assistance Act of 1978 was amended to enable the USFS to conduct surveys to appraise insect infestations they have been publishing yearly detection surveys. The downloadable geopackage files for each of the 8 regions in the US give a spatial overview of insect infestations over the years as well as some severity indicies and survey information.
+    - **Some Key Variables**
+        - *HOST* (discrete) - Type of tree species infected.
+        - *PERCENT_AFFECTED* (continuous) - Percent of tree canopy within the polygon that are damaged or recently dead.
+        - *SURVEY_YEAR* (numeric) - Year the survey was done in that paticular area.
+        - *ACRES* (continuous) - Area of affected trees.
+    - **Link to Dataset:** - https://www.fs.usda.gov/science-technology/data-tools-products/fhp-mapping-reporting/detection-surveys
 2. **PRISM DATA**
+    - The dataset titled "PRISM Weather Data" is a gathering of weather observations from a wide range of monitoring networks, assembled by a team at Oregon State University. The result is a spatial dataset published across multiple spatial and temporal resolutions that covers 1895 to present. The is free to the public project enables users to gather as much as 45 years of daily weather data, and over 100 years of monthly/yearly data.
+        - **Some Key Variables:**
+        - *tmean* (continuous) - Mean average temperature per year
+        - *tmax* (continuous) - Maximum average temperature per year
+        - *tmin* (continuous) - Minimum average temperature per year
+        - *tdmean* (continuous) - Mean average dew point temperature per year
+        - *ppt* (continuous) - Average amount of precipitation per year
+        - *vpdmin* (continuous) - Minimum average vapor pressure index reading per year
+        - *vpdmax* (continuous) - Maximum average vapor pressure index reading per year
+    - **Link to Dataset** - https://prism.oregonstate.edu/
 3. **Two Datasets of mountain pine beetle outbreak dynamics and direct control in Cypress Hills, SK**
     - The datasets titled "Dataset of mountain pine beetle outbreak dynamics and direct control in Cypress Hills, SK" published on Feb 26, 2020 by Kunegel-Lion, Mélodie1 et. al. details two datasets that span two different grids of cells (both of which on Saskatchewan Forest Service land), dataset one consisting of 18,317 100 × 100 m cells and dataset two being a grid of 722 500 × 500 m cells. These datasets report topological data, weather data as well as the presence of pinebeetle mitagtion among the cells between the years of 2006 and 2018. Datasets one and two share the same variables, as such the key variables are listed for both datasets.
     - **Some Key Variables:**
