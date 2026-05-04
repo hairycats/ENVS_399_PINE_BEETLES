@@ -51,9 +51,22 @@ This respository is split up into 4 folders.
   
 ## Example Figure
 
+This example is from <code>climate_visuals.html</code> and is the code used to generate the GAM models that served as part of our analysis. The screenshots include the report from the model itself as well as the first of 5 panels visualizing the model. 
+
+<img width="928" height="750" alt="Screenshot 2026-05-04 at 4 26 57 PM" src="https://github.com/user-attachments/assets/ff74f270-dfc5-4c76-91b4-183a9aa672ae" />
+
+<img width="930" height="536" alt="Screenshot 2026-05-04 at 4 27 30 PM" src="https://github.com/user-attachments/assets/58089f09-1f5a-4aa3-bb2f-6897cc816d74" />
 
 ## Author Contributions
+**Full group** 
+The full group worked together to communicate with experts in the field (Dr. Robert Andrus) as well as compile analysis into a product that maes sense. Each member contributed to the white paper in equal parts. Each group member also contributed to creating the presentation and presenting in equal parts. Throughout the project the group attempted to meet on a biweekly basis to delegate tasks and share results from the previous week(s). 
+
 **Owyn** 
+- Did the bulk of the work on creating all of the visuals found in the Visuals folder. 
+- Organized Repository to be readable. 
+- Wrote and editted the reccomendations section of the white paper. 
+- Attended group meetings to develop effienct plans of attack.
+- Helped with the presentation and spoke on slides related to data analysis. 
 
 **Oscar** 
 
