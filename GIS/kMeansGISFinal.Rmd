@@ -1,0 +1,106 @@
+---
+title: "kMeansGISFinal"
+output: html_document
+date: "2026-04-28"
+---
+
+
+```{r}
+library(tidyverse)
+#install.packages('MPV')
+library(MPV)
+#install.packages('GGally')
+library(GGally)
+#install.packages('leaps')
+library(leaps)
+#install.packages("randomForest")
+library(randomForest)
+#install.packages("caret")
+library(caret)
+```
+
+```{r}
+qData = read.csv('clusteredData.csv')
+```
+
+```{r}
+#filter for necessary columns only (need one to join back into data later)
+qData = qData%>%
+  mutate(inNF = if_else(REGION == 02, TRUE, FALSE))
+
+qClim = qData%>%
+  select(SHAPE_Area, tmean, tmax, tmin, tdmean, ppt, vpdmin, vpdmax)%>%
+  mutate(severity = as.factor(case_when(
+    SHAPE_Area <= 14134.55 ~ 'Low',
+    SHAPE_Area <= 38331.19 ~ 'MedLow',
+    SHAPE_Area <= 94914.05 ~ 'Med',
+    SHAPE_Area <= 289834.07 ~ 'MedHi',
+    SHAPE_Area > 289834.07 ~ 'Hi'))
+  )
+#pairs(qClim)
+summary(qClim$severity)
+
+```
+
+```{r}
+qLM = lm(SHAPE_Area ~ tmean+tmax+tmin+tdmean+ppt+vpdmin+vpdmax, data=qClim)
+
+plot(qLM)
+
+idkStuff = lm(SHAPE_Area ~ inNF, data=qData)
+summary(idkStuff)
+
+summary(qLM)
+```
+
+```{r}
+# BEST SUBSET
+regfit.full=regsubsets(SHAPE_Area~., data=qClim)
+reg_summary = summary(regfit.full)
+reg_summary
+reg_summary$bic
+
+plot(regfit.full, scale = 'r2')
+coef(regfit.full, 6)
+plot(regfit.full, scale = 'adjr2')
+plot(regfit.full, scale = 'Cp')
+
+
+```
+
+```{r}
+#lmao lm model is really really bad let's try random forest
+set.seed(42) #idk just using internet code so set a seed for reproducability ig?
+
+#making random sample to test model with first
+tinyQClim = qClim[sample(nrow(qClim), 0.01* nrow(qClim)), ]
+
+#split sample between train and test
+trainIndex <- sample(1:nrow(tinyQClim), 0.8 * nrow(tinyQClim))
+
+trainData <- tinyQClim[trainIndex, ]
+testData <- tinyQClim[-trainIndex, ]
+```
+
+```{r}
+#run random forest
+rf_model <- randomForest(severity ~ ., data = trainData)
+print(rf_model)
+```
+
+```{r}
+predictions <- as.factor(predict(rf_model, testData))
+confusionMatrix(predictions, as.factor(testData$severity))
+
+str(predictions)
+str(as.factor(testData$severity))
+```
+
+
+
+
+
+
+
+
+
