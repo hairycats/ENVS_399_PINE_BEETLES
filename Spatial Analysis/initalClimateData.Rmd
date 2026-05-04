@@ -1,0 +1,146 @@
+---
+title: "ToBeetles"
+output: pdf_document
+date: "2026-03-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#I LOVE TIDYVERSE
+```{r}
+library(tidyverse)
+```
+
+#dumbass beetles
+```{r}
+beets = read_csv('~/DATA399/SemesterGroupProject/rooseveltBeetles.csv')
+```
+
+#Just need ponderosas
+```{r}
+beets = beets %>%
+  filter(HOST == 'ponderosa pine')
+```
+#What's going up there in that noggin of yours??
+```{r}
+colSums(is.na(beets))
+nrow(beets)
+
+sort(unique(beets$SURVEY_YEAR))
+```
+
+#no dawg these rows shit (too many nas can't be bothered to deal with)
+```{r}
+beets =  subset(beets, select = -c(HOST_GROUP_CODE, PERCENT_AFFECTED_CODE, PERCENT_MIN,
+                   PERCENT_MAX, PERCENT_MID, SNAPGRID_ROW, SNAPGRID_COLUMN))
+```
+
+#Mmkay how we lookin now??
+```{r}
+is(beets$)
+```
+
+
+#downloads all the prism data, and I mean allllll of the prism data
+```{}
+#install.packages("prism")
+library(prism)
+
+#Thingy going in here
+prism_set_dl_dir("~/DATA399/SemesterGroupProject/prism_data2")
+
+#We're downloading total precipitation
+get_prism_annual(type = "ppt", years = 1997:2024, keepZip = FALSE)
+#mean temperature
+get_prism_annual(type = "tmean", years = 1997:2024, keepZip = FALSE)
+#max temperature
+get_prism_annual(type = "tmax", years = 1997:2024, keepZip = FALSE)
+#min temperature
+get_prism_annual(type = "tmin", years = 1997:2024, keepZip = FALSE)
+#min vapor pressure deficit
+get_prism_annual(type = "vpdmin", years = 1997:2024, keepZip = FALSE)
+#max vapor pressure deficit
+get_prism_annual(type = "vpdmax", years = 1997:2024, keepZip = FALSE)
+#mean dew point temperature
+get_prism_annual(type = "tdmean", years = 1997:2024, keepZip = FALSE)
+```
+
+#uhh let's see here trying to steal the internet code to import climate data mmmmm climate data
+
+#I really don't know what this does..
+
+
+```{r}
+library(sf)
+library(terra)
+library(dplyr)
+
+#set working directory and load data
+setwd("C:/Users/ochin/Downloads/School/GIS")
+beetles <- st_read("coloradoBeetles.shp")
+#beetles <- st_read("C:\Users\ochin\Downloads\School\GIS\coloradoBeetles.shp")
+# CRS is correctly EPSG:5070 now, just reproject to PRISM's CRS
+beetles_proj <- st_transform(beetles, crs = "EPSG:4269")
+
+# KEY FIX: extract using centroids, not polygon boundaries
+# 99.6% of polygons are smaller than one PRISM 4km cell,
+# so polygon extraction almost always returns NA
+sf_use_s2(FALSE)
+beetles_centroids <- st_centroid(beetles_proj)
+
+variables <- c("tmean", "tmax", "tmin", "tdmean", "ppt", "vpdmin", "vpdmax")
+prism_dir <- "C:/Users/ochin/OneDrive/Documents/DATA399/SemesterGroupProject/prism_data2"
+
+get_bil_path <- function(var, year, dir) {
+  pattern <- paste0("prism_", var, "_us_25m_", year)
+  folder  <- list.files(dir, pattern = pattern, full.names = TRUE)
+  if (length(folder) == 0) return(character(0))
+  bil <- list.files(folder, pattern = "\\.bil$", full.names = TRUE)
+  return(bil)
+}
+
+results <- st_drop_geometry(beetles_proj)
+for (var in variables) {
+  results[[var]] <- NA_real_
+}
+
+for (year in sort(unique(beetles_proj$SURVEY_YEA))) {
+  row_idx          <- which(beetles_proj$SURVEY_YEA == year)
+  centroids_year   <- beetles_centroids[row_idx, ]
+
+  for (var in variables) {
+    bil_path <- get_bil_path(var, year, prism_dir)
+
+    if (length(bil_path) == 0) {
+      message(paste("Missing raster:", var, year))
+      next
+    }
+
+    r         <- rast(bil_path)
+    extracted <- terra::extract(r, vect(centroids_year), method = "simple", bind = FALSE)
+    results[[var]][row_idx] <- extracted[[2]]
+  }
+
+  message(paste("Done: year", year))
+}
+
+beetles_climate <- st_sf(results, geometry = st_geometry(beetles_proj))
+
+if ("fid" %in% names(beetles_climate)) {
+  beetles_climate <- beetles_climate %>% rename(orig_fid = fid)
+}
+
+st_write(
+  beetles_climate,
+  "C:/Users/ochin/Downloads/School/colorado_beetles_with_climate.gpkg",
+  delete_dsn = TRUE
+)
+```
+
+
+
+
+
+
