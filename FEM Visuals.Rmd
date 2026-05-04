@@ -9,6 +9,11 @@ editor_options:
     wrap: 72
 ---
 
+No figures in this file ended up being used because this was before we
+labeled the climate variables, and did not understand nor know what
+these climate variables stood for. Some of the first figures in this
+file overlap with figures in Climate_Visuals.Rmd
+
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(dplyr)
@@ -56,15 +61,15 @@ total_affected
 
 **Summary**
 
-\- shows how the total area of forest affected by mortality changes over
-time
+-   shows how the total area of forest affected by mortality changes
+    over time
 
-\- each point represents the summed acres impacted in a given survey
-year
+-   each point represents the summed acres impacted in a given survey
+    year
 
-\- line highlights trends in outbreak dynamics
+-   line highlights trends in outbreak dynamics
 
-\- huge spike and then it flat lines (which may be due to lack of data)
+-   huge spike and then it flat lines (which may be due to lack of data)
 
 ```{r}
 mortality <- PondoMPB_Data %>%
@@ -94,12 +99,12 @@ mortality
 
 **Summary**
 
-\- average mortality severity of ponderosa pines from 2010 to 2025
+-   average mortality severity of ponderosa pines from 2010 to 2025
 
-\- highlights year-to-year trends, whether the outbreak was
-intensifying, stabilizing, or declining during that period
+-   highlights year-to-year trends, whether the outbreak was
+    intensifying, stabilizing, or declining during that period
 
-\- shape looks decent
+-   shape looks decent
 
 ```{r}
 ggplot(PondoMPB_Data, aes(x = ACRES)) +
@@ -109,9 +114,13 @@ ggplot(PondoMPB_Data, aes(x = ACRES)) +
   theme_minimal()
 ```
 
-**Summary** - distribution of individual affected areas across all
-observations - log scale to account for the wide range of sizes -
-reveals that most mortality events impact relatively small areas
+**Summary**
+
+-   distribution of individual affected areas across all observations
+
+-   log scale to account for the wide range of sizes
+
+-   reveals that most mortality events impact relatively small areas
 
 ```{r}
 ggplot(PondoMPB_Data, aes(x = PERCENT_MID)) +
@@ -124,11 +133,11 @@ ggplot(PondoMPB_Data, aes(x = PERCENT_MID)) +
 
 **Summary**
 
-\- shows how mortality severity (PERCENT_MID) is distributed
+-   shows how mortality severity (PERCENT_MID) is distributed
 
-\- indicates that most observations have low to moderate mortality
+-   indicates that most observations have low to moderate mortality
 
-\- high-severity events are less common
+-   high-severity events are less common
 
 ```{r}
 ggplot(PondoMPB_Data %>% filter(!is.na(PERCENT_MID)), 
@@ -156,13 +165,13 @@ ggplot(PondoMPB_Data, aes(x = ACRES, y = PERCENT_MID)) +
 
 **Summary**
 
-\- relationship between the size of affected areas (log-scaled) and
-mortality severity
+-   relationship between the size of affected areas (log-scaled) and
+    mortality severity
 
-\- red curve = in general, larger affected areas tend to be associated
-with slightly higher mortality
+-   red curve = in general, larger affected areas tend to be associated
+    with slightly higher mortality
 
-\- relationship is nonlinear and variable
+-   relationship is nonlinear and variable
 
 ```{r}
 climate_vars <- names(PondoMPB_Data) %>%
@@ -197,16 +206,16 @@ ggplot(df_top, aes(x = climate_value, y = PERCENT_MID)) +
 
 **Summary**
 
-\- six climate variables most strongly correlated with mortality
+-   six climate variables most strongly correlated with mortality
 
-\- I hate these climate variables and have no idea what they mean
+-   I hate these climate variables and have no idea what they mean
 
-\- each panel represents one of the 6
+-   each panel represents one of the 6
 
-\- GAM smoothed
+-   GAM smoothed
 
-\- mortality responds differently across the range of each climate
-driver
+-   mortality responds differently across the range of each climate
+    driver
 
 ```{r}
 climate_vars <- PondoMPB_Data %>%
@@ -229,12 +238,12 @@ ggplot(cor_df, aes(Var1, Var2, fill = value)) +
 
 **Summary**
 
-\- pairwise correlations among all mean numeric climate variables
+-   pairwise correlations among all mean numeric climate variables
 
-\- colors = strength and direction
+-   colors = strength and direction
 
-\- I know the axis suck I can make them better if I have better names
-for the climate variables
+-   I know the axis suck I can make them better if I have better names
+    for the climate variables
 
 ```{r}
 severity_overtime <- PondoMPB_Data %>%
@@ -263,13 +272,15 @@ severity_overtime_zoom
 
 **Summary:**
 
-\- how number of observations in each mortality severity class changes
-over time
+-   how number of observations in each mortality severity class changes
+    over time
 
+```{=html}
+<!-- -->
+```
 -   I zoomed in on just the part we have the right data for to make it
     readable and look prettier
-
-\- I think with the rest of our data these trends make sense
+-   I think with the rest of our data these trends make sense
 
 # Modeling
 

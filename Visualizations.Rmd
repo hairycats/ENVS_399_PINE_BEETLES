@@ -48,7 +48,7 @@ View(historical_data)
 ```
 
 ```{r}
-ggplot(data = historical_data, aes(x = death_date, y = age, color = site, size = dbh_cm, alpha = 0.5)) + 
+ggplot(data = historical_data, aes(x = death_date, y = age, size = dbh_cm, alpha = 0.5)) + 
   geom_point() +
   geom_vline(xintercept = historical_data$event_date, linetype = "dashed", color = "black") + 
   xlab("Death Year") + 
@@ -131,7 +131,7 @@ ggplot(Dataset1_100x100m, aes(DegreeDays, PeakEmergence)) +
 **Plot 2** illustrates the relationship between accumulated degree-days above 5.5°C and the timing of peak mountain pine beetle emergence (Julian day). The smoothing line shows how increasing heat accumulation influences the timing of when beetles emerge during the season.
 
 ```{r}
-#older trees are more suspetiable 
+#older trees may be more at risk 
 
 ggplot(Dataset1_100x100m, aes(PineAge, MPB)) +
   labs(title = "Effect of Pine Age on Mountain Pine Beetle Presence") + 
@@ -139,7 +139,18 @@ ggplot(Dataset1_100x100m, aes(PineAge, MPB)) +
   xlab ("Pine Age (Years)") + 
   geom_smooth(method="glm", method.args=list(family="binomial")) +
     theme_minimal()
+
+ggplot(Dataset1_100x100m, aes(PineAge, MPB)) +
+  labs(title = "Effect of Pine Age on Mountain Pine Beetle Presence Raw") + 
+  ylab("Pine Beetles (presence)") + 
+  xlab ("Pine Age (Years)") + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method="glm", method.args=list(family="binomial")) +
+    theme_minimal()
+  
 ```
+
+Both of these plots attempt to show the relationship between the pine beetle presence and the age of the tree. The first graph is without raw data shown and the second one has the raw data included. These graphs are likely not very accurate because the 500x500 data set has no strong correlations while the 100x100 data set only measures presence versus absence, making the graphs look off, especially when looking at the raw data.
 
 ```{r}
 
@@ -166,7 +177,7 @@ ggplot(Dataset1_100x100m, aes(Northerness, Easterness, z = MPB)) +
 
 **Plot 1** This plot shows how elevation influences the probability of mountain pine beetle (MPB) presence. The logistic regression curve shows that pine beetle probability goes up with elevation which is curious and something to look into further, as it is not supported by other evidence.
 
-**Plot 2** This plot visualizes the average probability of MPB infestation across northerness and easterness. The color gradient highlights areas of higher infestation likelihood, indicating that northwest-facing slopes may experience greater beetle activity, potentially due to favorable microclimate conditions.
+**Plot 2** This plot visualizes the average probability of MPB infestation across northerness and easterness. The color gradient highlights areas of higher infestation likelihood, indicating that northwest-facing slopes may experience greater beetle activity, potentially due to favorable micro-climate conditions.
 
 ```{r}
 spread_long <- Dataset1_100x100m %>%
@@ -275,3 +286,5 @@ p_spread <- ggplot(Dataset1_100x100m, aes(BP1, MPB)) +
 (p_map | p_temp) /
 (p_age | p_spread)
 ```
+
+This graph is just a patchwork of several of the ones illustrated above. I was just trying to learn how to use patchwork.

@@ -6,7 +6,7 @@ output:
 date: "2026-04-01"
 ---
 
-# Libraries Data Cleaning and Setup 
+# Libraries Data Cleaning and Setup
 
 ```{r message=FALSE}
 
@@ -51,8 +51,10 @@ climate_clean <- climate %>%
          -LEGACY_PAT, -LEGACY_P_1, 
          -LEGACY_TPA, -LEGACY_NO_, 
          -LEGACY_FOR, -LEGACY_F_1) %>% 
-  filter(DCA_COMMON == "mountain pine beetle", HOST == "ponderosa pine", DAMAGE_T_1 == "Mortality")
+  filter(DCA_COMMON == "mountain pine beetle", DAMAGE_T_1 == "Mortality")
 head(climate_clean)
+
+unique(climate_clean$HOST)
 ```
 
 # Non-Climate Plots
@@ -74,13 +76,13 @@ total_affected
 
 **Summary**
 
-\- shows how the total area of forest affected by mortality changes over time
+-   shows how the total area of forest affected by mortality changes over time
 
-\- each point represents the summed acres impacted in a given survey year
+-   each point represents the summed acres impacted in a given survey year
 
-\- line highlights trends in outbreak dynamics
+-   line highlights trends in outbreak dynamics
 
-\- huge spike and then it flat lines (which may be due to lack of data)
+-   huge spike and then it flat lines (which may be due to lack of data) \<- upon further exploration it does not look like the flat lining is due to lack of data, more so the spike just seems like a massive mortality event
 
 ```{r}
 
@@ -110,13 +112,13 @@ mortality_zoom
 
 **Summary**
 
-\- average mortality severity of ponderosa pines from 2010 to 2025
+-   average mortality severity of ponderosa pines from 2010 to 2025
 
-\- highlights year-to-year trends, whether the outbreak was intensifying, stabilizing, or declining during that period
+-   highlights year-to-year trends, whether the outbreak was intensifying, stabilizing, or declining during that period
 
-\- shape looks decent
+-   shape looks along the lines of what we would expect
 
-\- the second one is the same just zoomed in
+-   the second one is the same just zoomed in
 
 ```{r}
 
@@ -129,11 +131,11 @@ ggplot(climate_clean, aes(x = ACRES)) +
 
 **Summary**
 
-\- distribution of individual affected areas across all observations
+-   distribution of individual affected areas across all observations
 
-\- log scale to account for the wide range of sizes
+-   log scale to account for the wide range of sizes
 
-\- reveals that most mortality events impact relatively small areas
+-   reveals that most mortality events impact relatively small areas
 
 ```{r}
 
@@ -147,11 +149,11 @@ ggplot(climate_clean, aes(x = PERCENT_MI)) +
 
 **Summary**
 
-\- shows how mortality severity (PERCENT_MID) is distributed
+-   shows how mortality severity (PERCENT_MID) is distributed
 
-\- indicates that most observations have low to moderate mortality
+-   indicates that most observations have low to moderate mortality
 
-\- high-severity events are less common
+-   high-severity events are less common
 
 ```{r}
 
@@ -166,9 +168,9 @@ ggplot(climate_clean %>% filter(!is.na(PERCENT_MI)),
 
 **summary**
 
-\- something feels wrong here but we still have the right trend
+-   something feels wrong here but we still have the right trend
 
-\- distribution of mortality severity each year
+-   distribution of mortality severity each year
 
 ```{r}
 ggplot(climate_clean, aes(x = ACRES, y = PERCENT_MI)) +
@@ -209,10 +211,41 @@ ggplot(climate_clean, aes(x = tmax, y = log(ACRES))) +
   theme_minimal()
 ```
 
-**Summary** \
-- mortality higher when temperature lower?? am I reading that right
+**Summary**
+
+-   mortality higher when temperature lower?? am I reading that right
 
 ```{r}
+ggplot(climate_clean, aes(x = tmean, y = PERCENT_MI)) +
+  geom_point(alpha = 0.4) + 
+  geom_smooth() + 
+  labs(
+    title = "Mean Annual Temperature vs. Percent of Area Affected",
+    x = "Mean Annual Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmin, y = PERCENT_MI)) +
+  geom_point(alpha = 0.4) + 
+  geom_smooth() + 
+  labs(
+    title = "Minimum Temperature vs. Percent of Area Affected",
+    x = "Minimum Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+
+ggplot(climate_clean, aes(x = tmax, y = PERCENT_MI)) +
+  geom_point(alpha = 0.4) + 
+  geom_smooth() + 
+  labs(
+    title = "Maximum Temperature vs. Percent of Area Affected",
+    x = "Maximum Temperature (°C)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
+
 ggplot(climate_clean, aes(x = tmean, y = PERCENT_MI)) +
   geom_smooth() + 
   labs(
@@ -250,11 +283,20 @@ ggplot(climate_clean, aes(x = tmax, y = PERCENT_MI)) +
 -   I think the minimum temperature one is the most interesting
 
 ```{r}
+ggplot(climate_clean, aes(x = ppt, y = PERCENT_MI)) +
+  geom_point(alpha = 0.4) + 
+  geom_smooth(color = "blue") +
+  labs(
+    title = "Annual Precipitation vs. Percent of Area Affected by MBP",
+    x = "Annual Precipitation (mm)",
+    y = "Percent of Area Affected"
+  ) + 
+  theme_minimal()
 
 ggplot(climate_clean, aes(x = ppt, y = PERCENT_MI)) +
   geom_smooth(color = "blue") +
   labs(
-    title = "Annual Precipitation vs. Percent of Area Affected by Pine Beetle Mortality",
+    title = "Annual Precipitation vs. Percent of Area Affected by MPB",
     x = "Annual Precipitation (mm)",
     y = "Percent of Area Affected"
   ) + 
@@ -271,13 +313,23 @@ ggplot(climate_clean, aes(x = ppt, y = PERCENT_MI)) +
 
 ```{r}
 
-ggplot(climate_clean, aes(x = vpdmax, y = PERCENT_MI)) +
+ ggplot(climate_clean, aes(x = vpdmax, y = PERCENT_MI)) +
+  geom_point(alpha = 0.4) + 
   geom_smooth(color = "blue") +
   labs(
     title = "Maximum Vapor Pressure Deficit vs. Percent of Area Affected",
     x = "Maximum Vapor Pressure Deficit (hPa)",
     y = "Percent of Area Affected "
   )
+
+ ggplot(climate_clean, aes(x = vpdmax, y = PERCENT_MI)) +
+  geom_smooth(color = "blue") +
+  labs(
+    title = "Maximum Vapor Pressure Deficit vs. Percent of Area Affected",
+    x = "Maximum Vapor Pressure Deficit (hPa)",
+    y = "Percent of Area Affected "
+  )
+
 ```
 
 **Summary:**
@@ -308,6 +360,8 @@ ggplot(climate_clean, aes(x = tmax, y = ppt)) +
 -   There seems to be a temperature and percip sweet spot for beetle activity
 
 # Models
+
+These are just relatively simply gam models I ended up playing with gratia but the outcomes seemed to display the opposite effect to the rest of our findings as such we were unsure how to incorporate them into our white paper.
 
 ```{r}
 climate_model <- climate_clean %>%
@@ -366,7 +420,7 @@ library(gratia)
 
 gam_model2 <- gam(
   log_acres ~ 
-    te(tmean, ppt) +  
+    te(tmax, ppt) +  
     s(vpdmax) +
     s(SURVEY_YEAR),
   data = climate_model,
@@ -383,28 +437,4 @@ draw(gam_model2, select = 1) +
     fill = "Predicted Mortality\n(log acres)"
   ) +
   theme_minimal(base_size = 14)
-```
-
-```{r}
-gamm(
-  log_acres ~ te(tmean, ppt) + s(vpdmax) + s(SURVEY_YEAR),
-  random = list(REGION_ID = ~1),
-  data = climate_model
-)
-
-gamm_model <- gamm(
-  log_acres ~ 
-    s(tmean) +
-    s(ppt) +
-    s(vpdmax) +
-    s(tmin),
-  random = list(SURVEY_YEAR = ~1),
-  data = climate_model,
-  method = "REML"
-)
-
-par(mfrow = c(2, 2))  # bigger panels
-plot(gamm_model$gam,
-     cex = 1.2,
-     lwd = 2, pages = 4)
 ```
