@@ -5,6 +5,13 @@ Mountain Pine Beetle outbreaks have been prevalent for more than 30 years in the
 
 Efforts to reduce beetle kill are shown to be both possible and effective, but a large-scale project will involve lots of resources and strict coordination in order to reduce the pine beetle population in the Rockies. We look to use historical data recording Mountain Pine Beetle outbreaks in order to better predict how they’ll spread in the coming years. We’ll also use data reflecting current beetle outbreaks to devise a strategy in order to greatly decrease the beetle population.
 
+## Repository Structure
+This respository is split up into 4 folders. 
+- Datasets includes all of the data that was used throughout the project. 
+- Spatial Analysis contains all of the files that were used for the spatial mapping and GIS portions of the project 
+- Supplementary Materials includes documents such as our annotated works cited, peer reviews and white paper draft
+- Visuals contains all non spatial r code and figures. Knitted versions of the rmd files are included to not have to download the adqequate files in order to run the code.
+
 ## Datasets
 1. **National Insect and Disease Detection Survey**
     - The dataset titled "National Insect and Disease Detection Survey" is an ongoing survey published and maintained by the United States Forest Service (USFS). As of 2008 when the Cooperative Forestry Assistance Act of 1978 was amended to enable the USFS to conduct surveys to appraise insect infestations they have been publishing yearly detection surveys. The downloadable geopackage files for each of the 8 regions in the US give a spatial overview of insect infestations over the years as well as some severity indicies and survey information.
@@ -41,4 +48,16 @@ Efforts to reduce beetle kill are shown to be both possible and effective, but a
         - *BP1red* (numeric) - for dataset 1: Number of infested cells, for dataset 2: or number of infested trees with uncontrolled trees in a 1-cell radius from the focus cell. BP0, BP2 and BP3 have different cell radii spanning from 1 to 3. 
         - *BP1man* (numeric) - for dataset 1: Number of infested cells, for dataset 2: or number of infested trees with all trees controlled in a 1-cell radius from the focus cell. BP0, BP2 and BP3 have different cell radii spanning from 1 to 3. 
     - **Link to Datasets:** https://datadryad.org/dataset/doi:10.5061/dryad.70rxwdbt9#methods
+  
+## Example Figure
+
+
+## Author Contributions
+**Owyn** 
+
+**Oscar** 
+
+**Conor** 
+
+**Sam** 
 
