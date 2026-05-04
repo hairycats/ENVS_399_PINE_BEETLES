@@ -1,4 +1,7 @@
 # Overview of files in this folder 
+
+This folder specifically focuses on visuals created in R Studio, all GIS figures are in a different folder. 
+
 **Visualizations.Rmd** -  our initial explorations using SK data and historical data 
 
 **FEM Visuals.Rmd** - our first look at the FEM and climate data set, this file was almost completely redone with new climate variables in <code>Climate_Visuals.Rmd</code> after we learned that the climate variables present here did not make sense to us
