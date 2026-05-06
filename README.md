@@ -69,6 +69,11 @@ The full group worked together to communicate with experts in the field (Dr. Rob
 - Helped with the presentation and spoke on slides related to data analysis. 
 
 **Oscar** 
+- Cleaned, and combined two of our final datasets.
+- Created all spatial visualizations.
+- Wrote and edited the problem description section of the white paper.
+- Attended group meetings to discuss and further plan of work.
+- Helped with the presentation and spoke on slides related to datasets and spatial overview.
 
 **Conor** 
 
