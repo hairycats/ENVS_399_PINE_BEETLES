@@ -76,6 +76,10 @@ The full group worked together to communicate with experts in the field (Dr. Rob
 - Helped with the presentation and spoke on slides related to datasets and spatial overview.
 
 **Conor** 
-
+- Wrote and editted the Background section of the white paper.
+- Worked with Oscar on the Conclusions section of the white paper.
+- Outlined Executive Summary section of the white paper
+- Attended group meetings to develop effienct plans of attack.
+- Helped with the presentation and spoke on slides related to background. 
 **Sam** 
 
