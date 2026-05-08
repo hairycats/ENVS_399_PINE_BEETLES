@@ -81,5 +81,6 @@ The full group worked together to communicate with experts in the field (Dr. Rob
 - Outlined Executive Summary section of the white paper
 - Attended group meetings to develop effienct plans of attack.
 - Helped with the presentation and spoke on slides related to background. 
+
 **Sam** 
 
