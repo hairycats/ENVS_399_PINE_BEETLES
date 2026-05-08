@@ -64,7 +64,7 @@ The full group worked together to communicate with experts in the field (Dr. Rob
 **Owyn** 
 - Did the bulk of the work on creating all of the visuals found in the Visuals folder. 
 - Organized Repository to be readable. 
-- Wrote and editted the reccomendations section of the white paper. 
+- Wrote and edited the recommendations section of the white paper. 
 - Attended group meetings to develop effienct plans of attack.
 - Helped with the presentation and spoke on slides related to data analysis. 
 
@@ -76,11 +76,15 @@ The full group worked together to communicate with experts in the field (Dr. Rob
 - Helped with the presentation and spoke on slides related to datasets and spatial overview.
 
 **Conor** 
-- Wrote and editted the Background section of the white paper.
+- Wrote and edited the Background section of the white paper.
 - Worked with Oscar on the Conclusions section of the white paper.
 - Outlined Executive Summary section of the white paper
-- Attended group meetings to develop effienct plans of attack.
+- Attended group meetings to develop efficient plans of attack.
 - Helped with the presentation and spoke on slides related to background. 
 
 **Sam** 
+- Wrote and edited the Solutions Description section of the white paper.
+- Helped edit and polish the white paper for missed grammar and citation errors.
+- Attended group meetings to plan out work.
+- Helped with the presentation and spoke on slides related to the solutions.
 
